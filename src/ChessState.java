@@ -19,7 +19,7 @@ class ChessState
 
 	int[] m_rows;
 	boolean kingCaptured = false;
-	final Random rand = new Random();
+	final static Random rand = new Random();
 
 	ChessState()
 	{
@@ -537,19 +537,23 @@ class ChessState
 		{
 			it = board.iterator(false);
 		}
-
 		// Check to see if its a tie, win, or lose
 		// Win
 		if (kingCaptured)
 		{
-			return new int[]{500000, 387565234, 235645, 45435344, 343535};
+			if(isMaximizePlayer)
+			{
+				return new int[]{500000, 387565234, 235645, 45435344, 343535};
+			}else {
+				return new int[]{-500000, 387565234, 235645, 45435344, 343535};
+			}
 		}
-		if (!it.hasNext())
+/*		if (! it.hasNext())
 		{
 			return new int[]{board.heuristic(rand), 387565234, 235645, 45435344, 343535};
-		}
+		}*/
 
-		if (depth == 0)
+		if (depth == 0 || !it.hasNext())
 		{
 			//printBoard(board.cells);
 			//System.out.println(depth);
@@ -566,7 +570,6 @@ class ChessState
 			newBoard.kingCaptured = newBoard.move(m.xSource, m.ySource, m.xDest, m.yDest);
 
 			int[] score = alphabeta(depth - 1, newBoard, newBoard.getTurn(isMaximizePlayer), alpha, beta);
-
 			if (isMaximizePlayer)
 			{
 				if (score[0] > alpha)
@@ -622,7 +625,7 @@ class ChessState
 		System.out.println();
 		while (hasntWon)
 		{
-			bestMoveForWhite = s.alphabeta(1, s, true, Integer.MIN_VALUE, Integer.MAX_VALUE);
+			bestMoveForWhite = s.alphabeta(3, s, true, Integer.MIN_VALUE, Integer.MAX_VALUE);
 			if (s.move(bestMoveForWhite[1], bestMoveForWhite[2], bestMoveForWhite[3], bestMoveForWhite[4]))
 			{
 				hasntWon = false;
@@ -632,7 +635,7 @@ class ChessState
 			System.out.println();
 			if (hasntWon)
 			{
-				bestMoveForDark = s.alphabeta(1, s, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
+				bestMoveForDark = s.alphabeta(6, s, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
 
 				if (s.move(bestMoveForDark[1], bestMoveForDark[2], bestMoveForDark[3], bestMoveForDark[4]))
 				{

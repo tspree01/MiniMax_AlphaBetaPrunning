@@ -6,6 +6,6 @@ public class Game
 	}
 
 	private void run(){
-                // print the board
+
 	}
 }
