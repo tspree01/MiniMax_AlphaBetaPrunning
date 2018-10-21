@@ -1,6 +1,8 @@
+import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Scanner;
 
 /// Represents the state of a chess game
 class ChessState
@@ -20,6 +22,7 @@ class ChessState
 	int[] m_rows;
 	boolean kingCaptured = false;
 	final static Random rand = new Random();
+	private Scanner sc = new Scanner(System.in);
 
 	ChessState()
 	{
@@ -541,19 +544,15 @@ class ChessState
 		// Win
 		if (kingCaptured)
 		{
-			if(isMaximizePlayer)
-			{
-				return new int[]{500000, 387565234, 235645, 45435344, 343535};
-			}else {
-				return new int[]{-500000, 387565234, 235645, 45435344, 343535};
-			}
+			return new int[]{500000, 387565234, 235645, 45435344, 343535};
+
 		}
 /*		if (! it.hasNext())
 		{
 			return new int[]{board.heuristic(rand), 387565234, 235645, 45435344, 343535};
 		}*/
 
-		if (depth == 0 || !it.hasNext())
+		if (depth == 0 || ! it.hasNext())
 		{
 			//printBoard(board.cells);
 			//System.out.println(depth);
@@ -613,43 +612,163 @@ class ChessState
 	}
 
 
-	public static void main(String[] args)
+	public static void main(String[] args) throws FileNotFoundException
 	{
-		int[] bestMoveForWhite;
-		int[] bestMoveForDark;
-		boolean hasntWon = true;
+		int firstArg = 0;
+		int secondArg = 0;
 
-		ChessState s = new ChessState();
-		s.resetBoard();
-		s.printBoard(System.out);
-		System.out.println();
-		while (hasntWon)
+		ChessState chess = new ChessState();
+		if (args.length > 0)
 		{
-			bestMoveForWhite = s.alphabeta(3, s, true, Integer.MIN_VALUE, Integer.MAX_VALUE);
-			if (s.move(bestMoveForWhite[1], bestMoveForWhite[2], bestMoveForWhite[3], bestMoveForWhite[4]))
+			try
 			{
-				hasntWon = false;
-			}
-
-			s.printBoard(System.out);
-			System.out.println();
-			if (hasntWon)
+				firstArg = Integer.parseInt(args[0]);
+				secondArg = Integer.parseInt(args[1]);
+			} catch (NumberFormatException e)
 			{
-				bestMoveForDark = s.alphabeta(6, s, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
-
-				if (s.move(bestMoveForDark[1], bestMoveForDark[2], bestMoveForDark[3], bestMoveForDark[4]))
-				{
-					hasntWon = false;
-				}
+				System.err.println("Argument" + args[0] + " must be an integer.");
+				System.exit(1);
 			}
-
-			s.printBoard(System.out);
-			System.out.println();
-
+		}
+		if(firstArg == 0 || secondArg == 0)
+		{
+			chess.PlayerVsAI(firstArg, secondArg);
+		}
+		else if (firstArg > 0 || secondArg > 0){
+			chess.PlayerVsAI(firstArg, secondArg);
 		}
 	}
 
+	private void run()
+	{
 
+	}
+
+	private int[] parseInput(String userInput)
+	{
+		char[] chars = userInput.toCharArray();
+		//H = 17
+
+		int h = Character.getNumericValue('F');
+		return new int[]{Character.getNumericValue(chars[0]) - 10, Character.getNumericValue(chars[1]) - 1, Character.getNumericValue(chars[2]) - 10, Character.getNumericValue(chars[3]) -1};
+	}
+
+	private void PlayerVsAI(int firstArg, int secondArg) throws FileNotFoundException
+	{
+		int[] bestMoveForWhite;
+		int[] bestMoveForDark;
+
+
+		boolean whiteHasWon = false;
+		boolean blackHasWon = false;
+		boolean hasntWon = true;
+		boolean isValidMove = true;
+		PrintStream print;
+		print = new PrintStream("Output");
+
+
+		ChessState board = new ChessState();
+		board.resetBoard();
+		while (true)
+		{
+		board.printBoard(print);
+		System.out.println("Example move:B3C3");
+		System.out.print("Your Move: ");
+		String userInput = sc.next();
+		int[] usersMove = parseInput(userInput);
+		while(true){
+			if(board.isValidMove(usersMove[0],usersMove[1],usersMove[2],usersMove[3])){
+
+				if(board.move(usersMove[0],usersMove[1],usersMove[2],usersMove[3]))
+				{
+					whiteHasWon = true;
+				}
+				break;
+			}
+			else {
+				System.out.print("Invalid move, Please Try again: ");
+				userInput = sc.next();
+				usersMove = parseInput(userInput);
+			}
+		}
+			board.printBoard(print);
+			print.println();
+
+		if(whiteHasWon){
+			break;
+		}
+
+			bestMoveForWhite = board.alphabeta(secondArg, board, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
+			if (board.move(bestMoveForWhite[1], bestMoveForWhite[2], bestMoveForWhite[3], bestMoveForWhite[4]))
+			{
+				whiteHasWon = true;
+				break;
+			}
+
+			board.printBoard(print);
+			print.println();
+		}
+		if (whiteHasWon)
+		{
+			System.out.println("White has won");
+		}
+		else
+		{
+			System.out.println("Black has won");
+		}
+	}
+
+	private void AIvsAI(int firstArg, int secondArg) throws FileNotFoundException
+	{
+		int[] bestMoveForWhite;
+		int[] bestMoveForDark;
+		boolean whiteHasWon = false;
+		boolean blackHasWon = false;
+		boolean hasntWon = true;
+		PrintStream print;
+		print = new PrintStream("OutputToFile");
+
+		if(firstArg == 2 && secondArg == 4){
+			firstArg += 1;
+		}
+
+		ChessState s = new ChessState();
+		s.resetBoard();
+		s.printBoard(print);
+		print.println();
+		while (hasntWon)
+		{
+			bestMoveForWhite = s.alphabeta(firstArg, s, true, Integer.MIN_VALUE, Integer.MAX_VALUE);
+			if (s.move(bestMoveForWhite[1], bestMoveForWhite[2], bestMoveForWhite[3], bestMoveForWhite[4]))
+			{
+				whiteHasWon = true;
+				break;
+			}
+
+			s.printBoard(print);
+			print.println();
+			if (! whiteHasWon)
+			{
+				bestMoveForDark = s.alphabeta(secondArg, s, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
+
+				if (s.move(bestMoveForDark[1], bestMoveForDark[2], bestMoveForDark[3], bestMoveForDark[4]))
+				{
+					blackHasWon = true;
+					hasntWon = false;
+				}
+			}
+			s.printBoard(print);
+			print.println();
+		}
+		if (whiteHasWon)
+		{
+			System.out.println("White has won");
+		}
+		else
+		{
+			System.out.println("Black has won");
+		}
+	}
 }
 
 
