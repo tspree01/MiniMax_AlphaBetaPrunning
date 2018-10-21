@@ -1,3 +1,4 @@
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -21,7 +22,7 @@ class ChessState
 
 	int[] m_rows;
 	boolean kingCaptured = false;
-	final static Random rand = new Random();
+	private final static Random rand = new Random();
 	private Scanner sc = new Scanner(System.in);
 
 	ChessState()
@@ -514,14 +515,7 @@ class ChessState
 
 	private boolean getTurn(boolean currentPlayer)
 	{
-		if (currentPlayer)
-		{
-			return false;
-		}
-		else
-		{
-			return true;
-		}
+		return ! currentPlayer;
 	}
 
 	int[] alphabeta(int depth, ChessState board, boolean isMaximizePlayer, int alpha, int beta)
@@ -566,7 +560,10 @@ class ChessState
 			// check to see if its the AI's turn
 			ChessState newBoard = new ChessState(board);
 			m = it.next();
-			newBoard.kingCaptured = newBoard.move(m.xSource, m.ySource, m.xDest, m.yDest);
+			if (newBoard.isValidMove(m.xSource, m.ySource, m.xDest, m.yDest))
+			{
+				newBoard.kingCaptured = newBoard.move(m.xSource, m.ySource, m.xDest, m.yDest);
+			}
 
 			int[] score = alphabeta(depth - 1, newBoard, newBoard.getTurn(isMaximizePlayer), alpha, beta);
 			if (isMaximizePlayer)
@@ -630,12 +627,21 @@ class ChessState
 				System.exit(1);
 			}
 		}
-		if(firstArg == 0 || secondArg == 0)
+		if (firstArg == 0 && secondArg == 0)
+		{
+			chess.PlayerVsPlayer(firstArg, secondArg);
+		}
+		else if (firstArg == 0)
 		{
 			chess.PlayerVsAI(firstArg, secondArg);
 		}
-		else if (firstArg > 0 || secondArg > 0){
-			chess.PlayerVsAI(firstArg, secondArg);
+		else if (secondArg == 0)
+		{
+			chess.AIvsPlayer(firstArg, secondArg);
+		}
+		else if (firstArg > 0 || secondArg > 0)
+		{
+			chess.AIvsAI(firstArg, secondArg);
 		}
 	}
 
@@ -650,71 +656,375 @@ class ChessState
 		//H = 17
 
 		int h = Character.getNumericValue('F');
-		return new int[]{Character.getNumericValue(chars[0]) - 10, Character.getNumericValue(chars[1]) - 1, Character.getNumericValue(chars[2]) - 10, Character.getNumericValue(chars[3]) -1};
+		return new int[]{Character.getNumericValue(chars[0]) - 10, Character.getNumericValue(chars[1]) - 1, Character.getNumericValue(chars[2]) - 10, Character.getNumericValue(chars[3]) - 1};
 	}
 
-	private void PlayerVsAI(int firstArg, int secondArg) throws FileNotFoundException
+	private void PlayerVsPlayer(int firstArg, int secondArg) throws FileNotFoundException
 	{
-		int[] bestMoveForWhite;
-		int[] bestMoveForDark;
+		String fileNamePlayerOne;
+		String fileNamePlayerTwo;
+		Scanner fileScPlayerOne = new Scanner(System.in);
+		Scanner fileScPlayerTwo = new Scanner(System.in);
+		Scanner fileOrInputSc = new Scanner(System.in);
+		Scanner inputFromFileScPlayerOne = null;
+		Scanner inputFromFileScPlayerTwo = null;
+		Scanner consoleScPlayerOne = new Scanner(System.in);
+		Scanner consoleScPlayerTwo = new Scanner(System.in);
+		boolean fromFileOrFromConsole = false;
 
 
 		boolean whiteHasWon = false;
-		boolean blackHasWon = false;
-		boolean hasntWon = true;
-		boolean isValidMove = true;
+		boolean darkHasWon = false;
 		PrintStream print;
-		print = new PrintStream("Output");
+		String userOneInput;
+		String userTwoInput;
+		print = new PrintStream("Output.txt");
 
 
 		ChessState board = new ChessState();
 		board.resetBoard();
+		System.out.println("Choose your Input:");
+		System.out.println("1) From file ");
+		System.out.println("2) From console ");
+		System.out.print("Your Choice: ");
+		int input = fileOrInputSc.nextInt();
+
+		if (input == 1)
+		{
+			System.out.println("What file do you want to pipe from for Player One? ");
+			System.out.print("Your File: ");
+			fileNamePlayerOne = fileScPlayerOne.next();
+			inputFromFileScPlayerOne = new Scanner(new File(fileNamePlayerOne));
+			System.out.println();
+
+			System.out.println("What file do you want to pipe from for Player One? ");
+			System.out.print("Your File: ");
+			fileNamePlayerTwo = fileScPlayerTwo.next();
+			inputFromFileScPlayerTwo = new Scanner(new File(fileNamePlayerTwo));
+		}
+
 		while (true)
 		{
-		board.printBoard(print);
-		System.out.println("Example move:B3C3");
-		System.out.print("Your Move: ");
-		String userInput = sc.next();
-		int[] usersMove = parseInput(userInput);
-		while(true){
-			if(board.isValidMove(usersMove[0],usersMove[1],usersMove[2],usersMove[3])){
-
-				if(board.move(usersMove[0],usersMove[1],usersMove[2],usersMove[3]))
-				{
-					whiteHasWon = true;
-				}
-				break;
-			}
-			else {
-				System.out.print("Invalid move, Please Try again: ");
-				userInput = sc.next();
-				usersMove = parseInput(userInput);
-			}
-		}
-			board.printBoard(print);
-			print.println();
-
-		if(whiteHasWon){
-			break;
-		}
-
-			bestMoveForWhite = board.alphabeta(secondArg, board, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
-			if (board.move(bestMoveForWhite[1], bestMoveForWhite[2], bestMoveForWhite[3], bestMoveForWhite[4]))
+			if (input == 1)
 			{
-				whiteHasWon = true;
+				userOneInput = inputFromFileScPlayerOne.next();
+			}
+			else
+			{
+				board.printBoard(print);
+				System.out.println("Example move:B3C3");
+				System.out.print("Your Move: ");
+				userOneInput = consoleScPlayerOne.next();
+			}
+			// if the user enters q quit the game
+			if (userOneInput.equals("q"))
+			{
 				break;
 			}
 
-			board.printBoard(print);
-			print.println();
+			int[] bestMoveForWhite = parseInput(userOneInput);
+			//Validate move
+			while (true)
+			{
+				if (board.isValidMove(bestMoveForWhite[0], bestMoveForWhite[1], bestMoveForWhite[2], bestMoveForWhite[3]))
+				{
+					if (board.move(bestMoveForWhite[0], bestMoveForWhite[1], bestMoveForWhite[2], bestMoveForWhite[3]))
+					{
+						whiteHasWon = true;
+					}
+					break;
+				}
+				else
+				{
+					System.out.print("Invalid move, Please Try again: ");
+					userOneInput = consoleScPlayerOne.next();
+				}
+				// if the user enters q quit the game
+				if (userOneInput.equals("q"))
+				{
+					break;
+				}
+				bestMoveForWhite = parseInput(userOneInput);
+			}
+			board.printBoard(System.out);
+			System.out.println();
+
+			if (whiteHasWon)
+			{
+				break;
+			}
+
+
+			if (input == 1)
+			{
+
+				userTwoInput = inputFromFileScPlayerTwo.next();
+			}
+			else
+			{
+				board.printBoard(print);
+				System.out.println("Example move:B3C3");
+				System.out.print("Your Move: ");
+				userTwoInput = consoleScPlayerTwo.next();
+			}
+			// if the user enters q quit the game
+			if (userTwoInput.equals("q"))
+			{
+				break;
+			}
+
+			int[] bestMoveForDark = parseInput(userTwoInput);
+			//Validate move
+			while (true)
+			{
+				if (board.isValidMove(bestMoveForDark[0], bestMoveForDark[1], bestMoveForDark[2], bestMoveForDark[3]))
+				{
+
+					if (board.move(bestMoveForDark[0], bestMoveForDark[1], bestMoveForDark[2], bestMoveForDark[3]))
+					{
+						darkHasWon = true;
+					}
+					break;
+				}
+				else
+				{
+					System.out.print("Invalid move, Please Try again: ");
+					userTwoInput = consoleScPlayerTwo.next();
+				}
+				// if the user enters q quit the game
+				if (userTwoInput.equals("q"))
+				{
+					break;
+				}
+				bestMoveForDark = parseInput(userTwoInput);
+			}
+			board.printBoard(System.out);
+			System.out.println();
+
+			if (darkHasWon)
+			{
+				break;
+			}
 		}
+		inputFromFileScPlayerOne.close();
+		inputFromFileScPlayerTwo.close();
+
 		if (whiteHasWon)
 		{
 			System.out.println("White has won");
 		}
 		else
 		{
-			System.out.println("Black has won");
+			System.out.println("Dark has won");
+		}
+	}
+
+	private void AIvsPlayer(int firstArg, int secondArg) throws FileNotFoundException
+	{
+		Scanner fileSc = new Scanner(System.in);
+		Scanner fileOrInputSc = new Scanner(System.in);
+		Scanner fileNameSc = null;
+		Scanner consoleSc = new Scanner(System.in);
+		boolean fromFileOrFromConsole = false;
+
+
+		boolean whiteHasWon = false;
+		boolean darkHasWon = false;
+		boolean hasntWon = true;
+		boolean isValidMove = true;
+		PrintStream print;
+		String userInput;
+		print = new PrintStream("Output.txt");
+
+
+		ChessState board = new ChessState();
+		board.resetBoard();
+		System.out.println("Choose your Input:");
+		System.out.println("1) From file ");
+		System.out.println("2) From console ");
+		System.out.print("Your Choice: ");
+		int input = fileOrInputSc.nextInt();
+		if (input == 1)
+		{
+			System.out.println("What file do you want to pipe from? ");
+			System.out.print("Your File: ");
+			String fileName = fileSc.next();
+			fileNameSc = new Scanner(new File(fileName));
+		}
+		while (true)
+		{
+			//AI
+			int[] bestMoveForWhite = board.alphabeta(firstArg, board, true, Integer.MIN_VALUE, Integer.MAX_VALUE);
+			if (board.isValidMove(bestMoveForWhite[1], bestMoveForWhite[2], bestMoveForWhite[3], bestMoveForWhite[4]))
+			{
+				if (board.move(bestMoveForWhite[1], bestMoveForWhite[2], bestMoveForWhite[3], bestMoveForWhite[4]))
+				{
+					whiteHasWon = true;
+					break;
+				}
+			}
+			board.printBoard(System.out);
+			System.out.println();
+
+			if (input == 1)
+			{
+				userInput = fileNameSc.next();
+			}
+			else
+			{
+				board.printBoard(print);
+				System.out.println("Example move:B3C3");
+				System.out.print("Your Move: ");
+				userInput = consoleSc.next();
+			}
+			// if the user enters q quit the game
+			if (userInput.equals("q"))
+			{
+				break;
+			}
+
+			int[] bestMoveForDark = parseInput(userInput);
+			//Validate move
+			while (true)
+			{
+				if (board.isValidMove(bestMoveForDark[0], bestMoveForDark[1], bestMoveForDark[2], bestMoveForDark[3]))
+				{
+					if (board.move(bestMoveForDark[0], bestMoveForDark[1], bestMoveForDark[2], bestMoveForDark[3]))
+					{
+						darkHasWon = true;
+					}
+					break;
+				}
+				else
+				{
+					System.out.print("Invalid move, Please Try again: ");
+					userInput = consoleSc.next();
+				}
+				// if the user enters q quit the game
+				if (userInput.equals("q"))
+				{
+					break;
+				}
+				bestMoveForDark = parseInput(userInput);
+			}
+			board.printBoard(System.out);
+			System.out.println();
+
+			if(darkHasWon){
+				break;
+			}
+	}
+		fileNameSc.close();
+		if (whiteHasWon)
+		{
+			System.out.println("White has won");
+		}
+		else
+		{
+			System.out.println("Dark has won");
+		}
+	}
+
+	private void PlayerVsAI(int firstArg, int secondArg) throws FileNotFoundException
+	{
+		int[] bestMoveForDark;
+		Scanner fileSc = new Scanner(System.in);
+		Scanner fileOrInputSc = new Scanner(System.in);
+		Scanner fileNameSc = null;
+		Scanner consoleSc = new Scanner(System.in);
+		boolean fromFileOrFromConsole = false;
+
+
+		boolean whiteHasWon = false;
+		boolean darkHasWon = false;
+		boolean hasntWon = true;
+		boolean isValidMove = true;
+		PrintStream print;
+		String userInput;
+		print = new PrintStream("Output.txt");
+
+
+		ChessState board = new ChessState();
+		board.resetBoard();
+		System.out.println("Choose your Input:");
+		System.out.println("1) From file ");
+		System.out.println("2) From console ");
+		System.out.print("Your Choice: ");
+		int input = fileOrInputSc.nextInt();
+		if (input == 1)
+		{
+			System.out.println("What file do you want to pipe from? ");
+			System.out.print("Your File: ");
+			String fileName = fileSc.next();
+			fileNameSc = new Scanner(new File(fileName));
+		}
+		while (true)
+		{
+			if (input == 1)
+			{
+				userInput = fileNameSc.next();
+			}
+			else
+			{
+				board.printBoard(print);
+				System.out.println("Example move:B3C3");
+				System.out.print("Your Move: ");
+				userInput = consoleSc.next();
+			}
+			// if the user enters q quit the game
+			if (userInput.equals("q"))
+			{
+				break;
+			}
+
+			int[] bestMoveForWhite = parseInput(userInput);
+			//Validate move
+			while (true)
+			{
+				if (board.isValidMove(bestMoveForWhite[0], bestMoveForWhite[1], bestMoveForWhite[2], bestMoveForWhite[3]))
+				{
+					if (board.move(bestMoveForWhite[0], bestMoveForWhite[1], bestMoveForWhite[2], bestMoveForWhite[3]))
+					{
+						whiteHasWon = true;
+					}
+					break;
+				}
+				else
+				{
+					System.out.print("Invalid move, Please Try again: ");
+					userInput = consoleSc.next();
+					bestMoveForWhite = parseInput(userInput);
+				}
+			}
+			board.printBoard(System.out);
+			System.out.println();
+
+			if (whiteHasWon)
+			{
+				break;
+			}
+			//AI
+			bestMoveForDark = board.alphabeta(secondArg, board, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
+			if (board.isValidMove(bestMoveForDark[1], bestMoveForDark[2], bestMoveForDark[3], bestMoveForDark[4]))
+			{
+				if (board.move(bestMoveForDark[1], bestMoveForDark[2], bestMoveForDark[3], bestMoveForDark[4]))
+				{
+
+					break;
+				}
+			}
+
+			board.printBoard(System.out);
+			System.out.println();
+		}
+		fileNameSc.close();
+		if (whiteHasWon)
+		{
+			System.out.println("White has won");
+		}
+		else
+		{
+			System.out.println("Dark has won");
 		}
 	}
 
@@ -723,42 +1033,47 @@ class ChessState
 		int[] bestMoveForWhite;
 		int[] bestMoveForDark;
 		boolean whiteHasWon = false;
-		boolean blackHasWon = false;
+		boolean darkHasWon = false;
 		boolean hasntWon = true;
 		PrintStream print;
 		print = new PrintStream("OutputToFile");
 
-		if(firstArg == 2 && secondArg == 4){
+		if (firstArg == 2 && secondArg == 4)
+		{
 			firstArg += 1;
 		}
-
 		ChessState s = new ChessState();
 		s.resetBoard();
-		s.printBoard(print);
-		print.println();
+		s.printBoard(System.out);
+		System.out.println();
 		while (hasntWon)
 		{
 			bestMoveForWhite = s.alphabeta(firstArg, s, true, Integer.MIN_VALUE, Integer.MAX_VALUE);
-			if (s.move(bestMoveForWhite[1], bestMoveForWhite[2], bestMoveForWhite[3], bestMoveForWhite[4]))
+			if (s.isValidMove(bestMoveForWhite[1], bestMoveForWhite[2], bestMoveForWhite[3], bestMoveForWhite[4]))
 			{
-				whiteHasWon = true;
-				break;
+				if (s.move(bestMoveForWhite[1], bestMoveForWhite[2], bestMoveForWhite[3], bestMoveForWhite[4]))
+				{
+					whiteHasWon = true;
+					break;
+				}
 			}
 
-			s.printBoard(print);
-			print.println();
+			s.printBoard(System.out);
+			System.out.println();
 			if (! whiteHasWon)
 			{
 				bestMoveForDark = s.alphabeta(secondArg, s, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
-
-				if (s.move(bestMoveForDark[1], bestMoveForDark[2], bestMoveForDark[3], bestMoveForDark[4]))
+				if (s.isValidMove(bestMoveForDark[1], bestMoveForDark[2], bestMoveForDark[3], bestMoveForDark[4]))
 				{
-					blackHasWon = true;
-					hasntWon = false;
+					if (s.move(bestMoveForDark[1], bestMoveForDark[2], bestMoveForDark[3], bestMoveForDark[4]))
+					{
+						darkHasWon = true;
+						hasntWon = false;
+					}
 				}
 			}
-			s.printBoard(print);
-			print.println();
+			s.printBoard(System.out);
+			System.out.println();
 		}
 		if (whiteHasWon)
 		{
