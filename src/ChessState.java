@@ -2,6 +2,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -22,8 +23,7 @@ class ChessState
 
 	int[] m_rows;
 	boolean kingCaptured = false;
-	private final static Random rand = new Random();
-	private Scanner sc = new Scanner(System.in);
+	final static Random rand = new Random();
 
 	ChessState()
 	{
@@ -33,6 +33,7 @@ class ChessState
 
 	ChessState(ChessState that)
 	{
+		this.kingCaptured = that.kingCaptured;
 		m_rows = new int[8];
 		for (int i = 0; i < 8; i++)
 		{ this.m_rows[i] = that.m_rows[i]; }
@@ -518,10 +519,11 @@ class ChessState
 		return ! currentPlayer;
 	}
 
-	int[] alphabeta(int depth, ChessState board, boolean isMaximizePlayer, int alpha, int beta)
+	int[] alphabeta(int depth, ChessState board, boolean isMaximizePlayer, int alpha, int beta, ArrayList beenThere)
 	{
 		int[] bestMoveForMax = new int[4];
 		int[] bestMoveForMin = new int[4];
+		boolean hasBeenThere = false;
 		ChessMoveIterator it;
 		ChessState.ChessMove m;
 
@@ -546,7 +548,7 @@ class ChessState
 			return new int[]{board.heuristic(rand), 387565234, 235645, 45435344, 343535};
 		}*/
 
-		if (depth == 0 || ! it.hasNext())
+		if (depth == 0)
 		{
 			//printBoard(board.cells);
 			//System.out.println(depth);
@@ -560,12 +562,14 @@ class ChessState
 			// check to see if its the AI's turn
 			ChessState newBoard = new ChessState(board);
 			m = it.next();
+			if(beenThere.contains(newBoard)){
+				continue;
+			}
 			if (newBoard.isValidMove(m.xSource, m.ySource, m.xDest, m.yDest))
 			{
 				newBoard.kingCaptured = newBoard.move(m.xSource, m.ySource, m.xDest, m.yDest);
 			}
-
-			int[] score = alphabeta(depth - 1, newBoard, newBoard.getTurn(isMaximizePlayer), alpha, beta);
+			int[] score = alphabeta(depth - 1, newBoard, newBoard.getTurn(isMaximizePlayer), alpha, beta, beenThere);
 			if (isMaximizePlayer)
 			{
 				if (score[0] > alpha)
@@ -643,6 +647,8 @@ class ChessState
 		{
 			chess.AIvsAI(firstArg, secondArg);
 		}
+
+
 	}
 
 	private void run()
@@ -826,6 +832,7 @@ class ChessState
 		Scanner fileNameSc = null;
 		Scanner consoleSc = new Scanner(System.in);
 		boolean fromFileOrFromConsole = false;
+		ArrayList<ChessState> beenThere = new ArrayList<ChessState>();
 
 
 		boolean whiteHasWon = false;
@@ -854,7 +861,7 @@ class ChessState
 		while (true)
 		{
 			//AI
-			int[] bestMoveForWhite = board.alphabeta(firstArg, board, true, Integer.MIN_VALUE, Integer.MAX_VALUE);
+			int[] bestMoveForWhite = board.alphabeta(firstArg, board, true, Integer.MIN_VALUE, Integer.MAX_VALUE, beenThere);
 			if (board.isValidMove(bestMoveForWhite[1], bestMoveForWhite[2], bestMoveForWhite[3], bestMoveForWhite[4]))
 			{
 				if (board.move(bestMoveForWhite[1], bestMoveForWhite[2], bestMoveForWhite[3], bestMoveForWhite[4]))
@@ -933,6 +940,7 @@ class ChessState
 		Scanner fileNameSc = null;
 		Scanner consoleSc = new Scanner(System.in);
 		boolean fromFileOrFromConsole = false;
+		ArrayList<ChessState> beenThere = new ArrayList<ChessState>();
 
 
 		boolean whiteHasWon = false;
@@ -1004,12 +1012,11 @@ class ChessState
 				break;
 			}
 			//AI
-			bestMoveForDark = board.alphabeta(secondArg, board, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
+			bestMoveForDark = board.alphabeta(secondArg, board, false, Integer.MIN_VALUE, Integer.MAX_VALUE,beenThere);
 			if (board.isValidMove(bestMoveForDark[1], bestMoveForDark[2], bestMoveForDark[3], bestMoveForDark[4]))
 			{
 				if (board.move(bestMoveForDark[1], bestMoveForDark[2], bestMoveForDark[3], bestMoveForDark[4]))
 				{
-
 					break;
 				}
 			}
@@ -1035,6 +1042,7 @@ class ChessState
 		boolean whiteHasWon = false;
 		boolean darkHasWon = false;
 		boolean hasntWon = true;
+		ArrayList<ChessState> beenThere = new ArrayList<ChessState>();
 		PrintStream print;
 		print = new PrintStream("OutputToFile");
 
@@ -1048,7 +1056,7 @@ class ChessState
 		System.out.println();
 		while (hasntWon)
 		{
-			bestMoveForWhite = s.alphabeta(firstArg, s, true, Integer.MIN_VALUE, Integer.MAX_VALUE);
+			bestMoveForWhite = s.alphabeta(firstArg, s, true, Integer.MIN_VALUE, Integer.MAX_VALUE, beenThere);
 			if (s.isValidMove(bestMoveForWhite[1], bestMoveForWhite[2], bestMoveForWhite[3], bestMoveForWhite[4]))
 			{
 				if (s.move(bestMoveForWhite[1], bestMoveForWhite[2], bestMoveForWhite[3], bestMoveForWhite[4]))
@@ -1056,13 +1064,14 @@ class ChessState
 					whiteHasWon = true;
 					break;
 				}
+				beenThere.add(s);
 			}
 
 			s.printBoard(System.out);
 			System.out.println();
 			if (! whiteHasWon)
 			{
-				bestMoveForDark = s.alphabeta(secondArg, s, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
+				bestMoveForDark = s.alphabeta(secondArg, s, false, Integer.MIN_VALUE, Integer.MAX_VALUE,beenThere);
 				if (s.isValidMove(bestMoveForDark[1], bestMoveForDark[2], bestMoveForDark[3], bestMoveForDark[4]))
 				{
 					if (s.move(bestMoveForDark[1], bestMoveForDark[2], bestMoveForDark[3], bestMoveForDark[4]))
@@ -1070,6 +1079,7 @@ class ChessState
 						darkHasWon = true;
 						hasntWon = false;
 					}
+					beenThere.add(s);
 				}
 			}
 			s.printBoard(System.out);
@@ -1084,6 +1094,7 @@ class ChessState
 			System.out.println("Black has won");
 		}
 	}
+
 }
 
 
